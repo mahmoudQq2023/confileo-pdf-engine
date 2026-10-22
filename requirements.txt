@@ -1,0 +1,48 @@
+# Confileo Python Scripts — Requirements (FIXED)
+# ================================================
+
+# Core PDF Processing
+# Need a RECENT PyMuPDF (>=1.26): it extracts Arabic in correct LOGICAL order.
+# PyMuPDF < 1.24 returns raw VISUAL order → Arabic comes out REVERSED.
+# pdf2docx 0.5.8 calls fitz.Rect.get_area() which 1.26.5 removed; that crash is
+# handled by a shim in pdf_to_word.py (_ensure_pdf2docx_compat), so we can stay
+# on a recent PyMuPDF and still keep pdf2docx working. Verified on 1.26.5.
+PyMuPDF>=1.26,<1.27
+
+# OCR Support (REQUIRED for proper Arabic text)
+# System packages required:
+#   Linux: apt-get install tesseract-ocr tesseract-ocr-ara
+pytesseract>=0.3.10
+
+# Word Document Generation
+python-docx>=1.1.0
+
+# PDF → Word (DOCX) — primary engine for pdf_to_word.py: real layout
+# reconstruction (paragraphs, tables, images) + logical-order text.
+# Pulls in opencv-python-headless + numpy + fonttools.
+pdf2docx>=0.5.8
+
+# PDF editor + stamped text (Scripts/pdf_text_layer.py): HarfBuzz shapes Arabic
+# replacement text and fontTools subsets the face it is embedded with, under a
+# ToUnicode that extracts in logical order. Without uharfbuzz the editor sets
+# only Latin/Cyrillic/Greek text itself and falls back to MuPDF's HTML box
+# (searchable-text garbage) for Arabic.
+uharfbuzz>=0.39
+fonttools>=4.40
+
+# Image Processing
+Pillow>=10.0.0
+
+# ─── CV BUILDER (were MISSING — caused silent Arabic failure) ───
+# The CV PDF engine (cv_builder_export.py). Pinned to the versions the CV output
+# was measured on: the bundled fonts (Fonts/cv/) switch one Arabic ligature off
+# with the @font-face font-feature-settings descriptor, which both honour; that
+# is what makes pdftotext return every Arabic word. 70.0 needs Python 3.10 or
+# newer; on Python 3.9 (the CentOS server's python3) the newest release is 66.0,
+# which printed the Arabic test CVs identically (the same words, «عبد الله»
+# spelled out in the Kufi and Naskh faces, a pixel-identical first page;
+# 28 Sept 2026).
+weasyprint==70.0; python_version >= "3.10"
+weasyprint==66.0; python_version < "3.10"
+# xhtml2pdf, reportlab, arabic-reshaper and python-bidi were its fallback engine
+# (Arabic came out as black boxes); cv_builder_export.py no longer imports them.
